@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       price: course.price,
       rating_average: course.rating_average,
       student_count: course.student_count,
-      url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/cursos/${course.slug}`,
+      url: `${process.env.NEXT_PUBLIC_SITE_URL || ""}/cursos/${course.slug}`,
     })),
   );
 }

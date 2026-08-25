@@ -75,7 +75,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     existingReview = data;
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const courseUrl = `${siteUrl}/cursos/${course.slug}`;
 
   const breadcrumbLd = {

@@ -29,6 +29,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     instructor: course.instructor
       ? { full_name: course.instructor.full_name, headline: course.instructor.headline }
       : null,
-    url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/cursos/${course.slug}`,
+    url: `${process.env.NEXT_PUBLIC_SITE_URL || ""}/cursos/${course.slug}`,
   });
 }

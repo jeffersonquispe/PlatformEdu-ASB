@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET ?? "");
+    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET || "");
   } catch (err) {
     console.error("Firma de webhook inválida", err);
     return NextResponse.json({ error: "Firma inválida" }, { status: 400 });

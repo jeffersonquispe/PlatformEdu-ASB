@@ -28,7 +28,7 @@ export async function createCheckoutSessionAction(courseId: string) {
     .maybeSingle();
   if (existingEnrollment) redirect(`/cursos/${course.slug}`);
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
   let sessionUrl: string | null = null;
   try {
