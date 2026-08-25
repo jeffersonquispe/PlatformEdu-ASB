@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { checkAgentAuth } from "@/lib/agent-auth";
+import { checkAgentAuth, isUuid } from "@/lib/agent-auth";
 import { createClient } from "@/lib/supabase/server";
 import type { Section, Lesson } from "@/types/database";
 
@@ -18,7 +18,8 @@ export async function GET(
 
   const { id: courseId } = await params;
   const { searchParams } = new URL(request.url);
-  const studentId = searchParams.get("studentId");
+  const studentIdParam = searchParams.get("studentId");
+  const studentId = studentIdParam && isUuid(studentIdParam) ? studentIdParam : null;
 
   const supabase = await createClient();
 

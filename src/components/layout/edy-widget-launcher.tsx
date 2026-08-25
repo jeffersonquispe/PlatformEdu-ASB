@@ -19,6 +19,7 @@ export function EdyWidgetLauncher() {
         <div className="h-[520px] w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border bg-background shadow-xl">
           <iframe
             src="/agente-edy"
+            data-testid="edy-iframe"
             title="Edy, asistente de voz"
             allow="microphone"
             className="h-full w-full border-0"
@@ -28,6 +29,7 @@ export function EdyWidgetLauncher() {
       <Button
         size="icon-lg"
         className="rounded-full shadow-lg"
+        data-testid="edy-launcher"
         aria-label={open ? "Cerrar a Edy" : "Hablar con Edy"}
         onClick={() => setOpen((value) => !value)}
       >

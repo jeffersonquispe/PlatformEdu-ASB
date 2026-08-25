@@ -74,6 +74,7 @@ export function CourseFilters() {
         onChange={(event) => setSearch(event.target.value)}
         placeholder="Buscar cursos..."
         className="pl-9"
+        data-testid="catalog-search"
       />
     </div>
   );

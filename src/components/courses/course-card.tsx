@@ -16,6 +16,8 @@ export function CourseCard({ course, layout = "grid" }: CourseCardProps) {
   return (
     <Link
       href={`/cursos/${course.slug}`}
+      data-testid="course-card"
+      data-course-slug={course.slug}
       className={cn(
         "group flex overflow-hidden rounded-xl border transition-shadow hover:shadow-md",
         isList ? "flex-row" : "flex-col",

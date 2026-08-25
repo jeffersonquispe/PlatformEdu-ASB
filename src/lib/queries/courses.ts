@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { filterCourses } from "@/lib/queries/filterCourses";
 import type { Course, CourseWithInstructor, Lesson, Section } from "@/types/database";
 
 export interface CourseFilters {

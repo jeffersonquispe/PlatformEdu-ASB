@@ -1,31 +1,70 @@
 import { NextResponse } from "next/server";
-import { checkAgentAuth } from "@/lib/agent-auth";
+import { checkAgentAuth, isUuid } from "@/lib/agent-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { stripe } from "@/lib/stripe/server";
-import { getFirstLessonId } from "@/lib/queries/courses";
+import { decideEnrollmentAction } from "@/lib/actions/enrollment";
 
 /**
  * Inscripción disparada por el agente de voz Edy: sin cookie de sesión, el
- * estudiante llega como studentId explícito en el body. Cursos gratis se
- * inscriben directo (misma validación que enrollFreeCourseAction, sin
- * redirect); cursos pagos devuelven un link de checkout de Stripe.
+ * estudiante llega como studentId explícito en el body. La decisión de qué
+ * hacer (inscribir vs. mandar a pagar) es lógica pura en
+ * `decideEnrollmentAction`; aquí solo se escribe en la base según el resultado.
+ *
+ * `confirmed` es la confirmación verbal del estudiante: sin ella no se escribe
+ * nada, solo se devuelve la decisión para que el agente la lea en voz alta.
  */
+/**
+ * Primera lección del curso. Igual que `getFirstLessonId`, pero con el cliente
+ * admin: esta ruta la llama el agente sin cookie de sesión, así que el cliente
+ * cookie-based de `@/lib/supabase/server` no aplica aquí.
+ */
+async function firstLessonId(
+  admin: ReturnType<typeof createAdminClient>,
+  courseId: string,
+): Promise<string | null> {
+  const { data: sections } = await admin
+    .from("sections")
+    .select("id, position, lessons(id, position)")
+    .eq("course_id", courseId)
+    .order("position", { ascending: true });
+
+  for (const section of sections ?? []) {
+    const lessons = [
+      ...(((section as unknown as { lessons: { id: string; position: number }[] }).lessons) ?? []),
+    ].sort((a, b) => a.position - b.position);
+    if (lessons.length > 0) return lessons[0].id;
+  }
+  return null;
+}
+
 export async function POST(request: Request) {
   const authError = checkAgentAuth(request);
   if (authError) return authError;
 
-  let body: { courseId?: string; studentId?: string };
+  let body: { courseId?: string; studentId?: string; confirmed?: boolean };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Body inválido" }, { status: 400 });
   }
-  const { courseId, studentId } = body;
+  const { courseId, studentId, confirmed } = body;
   if (!courseId || !studentId) {
     return NextResponse.json({ error: "Faltan courseId y/o studentId" }, { status: 400 });
   }
+  if (!isUuid(studentId)) {
+    return NextResponse.json({ error: "studentId inválido" }, { status: 400 });
+  }
 
   const admin = createAdminClient();
+
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("id", studentId)
+    .maybeSingle();
+  if (!profile) {
+    return NextResponse.json({ error: "Estudiante no encontrado" }, { status: 404 });
+  }
+
   const { data: course } = await admin
     .from("courses")
     .select("id, title, price, thumbnail_url, status, slug")
@@ -36,6 +75,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Este curso no está disponible" }, { status: 404 });
   }
 
+  const decision = decideEnrollmentAction(course);
+
+  // Curso de pago: nunca se escribe en enrollments, solo se devuelve el link.
+  if (decision.type === "checkout") {
+    return NextResponse.json({ enrolled: false, checkoutUrl: decision.url });
+  }
+
+  if (!confirmed) {
+    return NextResponse.json({ enrolled: false, requiresConfirmation: true });
+  }
+
   const { data: existingEnrollment } = await admin
     .from("enrollments")
     .select("id")
@@ -44,54 +94,24 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (existingEnrollment) {
-    return NextResponse.json({ enrolled: true, courseUrl: `/cursos/${course.slug}` });
-  }
-
-  if (Number(course.price) <= 0) {
-    const { error } = await admin.from("enrollments").upsert(
-      { student_id: studentId, course_id: courseId, amount_paid: 0 },
-      { onConflict: "student_id,course_id", ignoreDuplicates: true },
-    );
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-    const lessonId = await getFirstLessonId(courseId);
+    const lessonId = await firstLessonId(admin, courseId);
     return NextResponse.json({
       enrolled: true,
+      alreadyEnrolled: true,
       learnUrl: lessonId ? `/aprender/${courseId}/${lessonId}` : null,
+      courseUrl: `/cursos/${course.slug}`,
     });
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  try {
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: course.title,
-              images: course.thumbnail_url ? [course.thumbnail_url] : undefined,
-            },
-            unit_amount: Math.round(Number(course.price) * 100),
-          },
-          quantity: 1,
-        },
-      ],
-      metadata: { courseId: course.id, studentId },
-      success_url: `${siteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/cursos/${course.slug}`,
-    });
-    if (!session.url) {
-      return NextResponse.json({ error: "No se pudo iniciar el pago" }, { status: 500 });
-    }
-    return NextResponse.json({ enrolled: false, checkoutUrl: session.url });
-  } catch (err) {
-    console.error("Stripe checkout session error", err);
-    return NextResponse.json(
-      { error: "No se pudo conectar con Stripe. Verifica la configuración de pagos." },
-      { status: 500 },
-    );
-  }
+  const { error } = await admin.from("enrollments").upsert(
+    { student_id: studentId, course_id: courseId, amount_paid: 0 },
+    { onConflict: "student_id,course_id", ignoreDuplicates: true },
+  );
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const lessonId = await firstLessonId(admin, courseId);
+  return NextResponse.json({
+    enrolled: true,
+    learnUrl: lessonId ? `/aprender/${courseId}/${lessonId}` : null,
+  });
 }

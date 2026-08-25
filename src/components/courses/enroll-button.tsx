@@ -49,6 +49,7 @@ export function EnrollButton({
         <Button
           size="lg"
           className="w-full"
+          data-testid="enroll-free"
           disabled={pending}
           onClick={() =>
             startTransition(async () => {

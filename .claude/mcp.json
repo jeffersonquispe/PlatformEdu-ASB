@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "eduplatform-context": {
+      "command": "node",
+      "args": [
+        "mcp-server/index.js"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "SUPABASE_URL": "${SUPABASE_URL}",
+        "SUPABASE_ANON_KEY": "${SUPABASE_ANON_KEY}"
+      }
+    },
+    "vercel": {
+      "type": "http",
+      "url": "https://mcp.vercel.com"
+    }
+  }
+}

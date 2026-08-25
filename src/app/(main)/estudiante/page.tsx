@@ -23,7 +23,7 @@ export default async function StudentDashboardPage() {
         <StatCard icon={Award} label="Certificados" value={String(data.certificates.length)} />
       </div>
 
-      <section>
+      <section data-testid="cursos-en-progreso">
         <h2 className="mb-4 text-lg font-semibold">En progreso</h2>
         {data.inProgress.length === 0 ? (
           <p className="text-sm text-muted-foreground">
@@ -40,6 +40,8 @@ export default async function StudentDashboardPage() {
                 <Link
                   key={enrollment.id}
                   href={`/cursos/${enrollment.course.slug}`}
+                  data-testid="enrolled-course"
+                  data-course-slug={enrollment.course.slug}
                   className="overflow-hidden rounded-xl border hover:shadow-md"
                 >
                   <div className="relative aspect-video bg-muted">

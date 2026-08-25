@@ -1,6 +1,10 @@
 import path from "path";
+import dotenv from "dotenv";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
+
+// Los tests de integración leen credenciales reales de .env.local.
+dotenv.config({ path: ".env.local", quiet: true });
 
 export default defineConfig({
   plugins: [react()],

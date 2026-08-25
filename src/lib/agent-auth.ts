@@ -9,11 +9,19 @@ import { NextResponse } from "next/server";
 export function checkAgentAuth(request: Request): NextResponse | null {
   const secret = process.env.AGENT_API_KEY;
   if (!secret) {
-    return NextResponse.json({ error: "AGENT_API_KEY no configurado" }, { status: 500 });
+    console.error("AGENT_API_KEY no configurado: rechazando request a /api/agent/*");
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const auth = request.headers.get("authorization");
   if (auth !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   return null;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Valida que un studentId recibido del agente tenga forma de UUID antes de usarlo en queries. */
+export function isUuid(value: string): boolean {
+  return UUID_RE.test(value);
 }
