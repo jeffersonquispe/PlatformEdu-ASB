@@ -12,8 +12,7 @@ import { defineConfig, devices } from '@playwright/test';
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: '.',
-  testMatch: ['tests/**/*.spec.ts', 'e2e/**/*.spec.ts'],
+  testDir: './e2e',
   /* Inicia sesion como instructor y estudiante y guarda e2e/.auth/*.json */
   globalSetup: require.resolve('./e2e/global-setup'),
   /* Run tests in files in parallel */
@@ -73,10 +72,12 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  /* Levanta la app antes de los tests. En local reutiliza el `npm run dev`
+     que ya este corriendo; en CI construye y sirve la build de produccion. */
+  webServer: {
+    command: process.env.CI ? 'npm run build && npm run start' : 'npm run dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 180_000,
+  },
 });

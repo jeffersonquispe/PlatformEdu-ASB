@@ -29,7 +29,8 @@ const cuentas: Cuenta[] = [
 ];
 
 async function iniciarSesion(cuenta: Cuenta) {
-  const browser = await chromium.launch({ channel: 'chrome' });
+  // En local usamos Chrome real; en CI solo se instala chromium.
+  const browser = await chromium.launch(process.env.CI ? {} : { channel: 'chrome' });
   const context = await browser.newContext();
   const page = await context.newPage();
 

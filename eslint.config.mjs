@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Tests generados por herramientas externas; no son codigo del proyecto
+    // (ya estan en .gitignore).
+    ".qa_agent_tests/**",
   ]),
 ]);
 
