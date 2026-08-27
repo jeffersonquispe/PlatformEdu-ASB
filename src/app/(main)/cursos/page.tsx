@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CourseFilters } from "@/components/catalog/course-filters";
+import { PromoBanner } from "@/components/catalog/promo-banner";
 import { CourseCard } from "@/components/courses/course-card";
 import { CoursePagination } from "@/components/catalog/pagination";
 import { searchCourses, type CourseFilters as CourseFiltersType } from "@/lib/queries/courses";
@@ -27,7 +28,8 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
-      <div className="mb-8 space-y-4">
+      <PromoBanner />
+      <div className="mb-8 mt-6 space-y-4">
         <h1 className="text-3xl font-bold tracking-tight">Explorar cursos</h1>
         <Suspense>
           <CourseFilters />
